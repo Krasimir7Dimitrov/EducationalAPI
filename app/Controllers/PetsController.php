@@ -6,8 +6,21 @@ use App\System\AbstractController;
 
 class PetsController extends AbstractController
 {
-    public function index()
+    public function getAllPets()
     {
-        // TODO: Implement index() method.
+        die('get all');
     }
+
+
+    public function getById()
+    {
+        die('get one');
+    }
+
+    public function create()
+    {
+        die('create');
+    }
+
+
 }

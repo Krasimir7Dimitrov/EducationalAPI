@@ -15,7 +15,8 @@
     "require": {
         "ext-mysqli": "*",
         "ext-readline": "*",
-        "phpmailer/phpmailer": "^6.6"
+        "phpmailer/phpmailer": "^6.6",
+        "pecee/simple-router": "4.3.7.2"
     },
     "autoload": {
         "psr-4": {

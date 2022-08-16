@@ -11,6 +11,4 @@ abstract class AbstractController
         $this->config = Registry::get('config');
     }
 
-    abstract public function index();
-
 }

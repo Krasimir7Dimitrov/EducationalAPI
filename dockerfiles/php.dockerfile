@@ -57,10 +57,6 @@ RUN apk add --no-cache $PHPIZE_DEPS \
 RUN apk add --no-cache libxml2-dev \
     && docker-php-ext-install pdo_mysql soap mysqli
 
-RUN wget https://get.symfony.com/cli/installer -O - | bash
-
-RUN mv /root/.symfony/bin/symfony /usr/local/bin/symfony
-
 RUN addgroup -g 1000 mvc && adduser -G mvc -g mvc -s /bin/sh -D mvc
  
 USER mvc

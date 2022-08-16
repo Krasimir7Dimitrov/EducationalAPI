@@ -5,6 +5,7 @@ namespace App\System;
 use App\Library\Debugbar\DebugData;
 use App\Library\Debugbar\Interfaces\DebugDataInterface;
 use App\System\Database\DbAdapter;
+use Pecee\SimpleRouter\SimpleRouter;
 
 class Application
 {
@@ -43,6 +44,17 @@ class Application
 
     public function run()
     {
-        return $this->frontController->run();
+        /* Load external routes file */
+        require_once __DIR__.'/../config/routes.php';
+
+        // Start the routing
+        try {
+            SimpleRouter::start();
+        } catch (\Throwable $exception)  {
+            $message = $exception->getMessage();
+            $code    = $exception->getCode();
+
+            header("HTTP/1.1 ".$code." ".$message , );
+        }
     }
 }
