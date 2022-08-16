@@ -2,19 +2,25 @@
 
 namespace App\Controllers;
 
+use App\Model\Collections\PetsCollection;
 use App\System\AbstractController;
 
 class PetsController extends AbstractController
 {
     public function getAllPets()
     {
-        die('get all');
+        $pets = new PetsCollection();
+        $allPets = $pets->getAllPets();
+
+        return json_encode($allPets);
     }
 
-
-    public function getById()
+    public function getById($id)
     {
-        die('get one');
+        $pets = new PetsCollection();
+        $pet = $pets->getPetById($id);
+
+        return json_encode($pet);
     }
 
     public function create()
@@ -31,6 +37,5 @@ class PetsController extends AbstractController
     {
         die('delete');
     }
-
 
 }

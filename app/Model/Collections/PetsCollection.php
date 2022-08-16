@@ -15,11 +15,13 @@ class PetsCollection extends BaseCollection
 
     public function getPetById($id): array
     {
-        $where = [
-            'id' => $id
-        ];
         $sql = "SELECT * FROM pets p WHERE p.id = :id";
 
-        return $this->db->fetchOne($sql, $where);
+        return $this->db->fetchOne($sql, ['id' => $id]);
+    }
+
+    public function update($where, $data)
+    {
+
     }
 }
