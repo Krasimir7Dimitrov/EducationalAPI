@@ -7,25 +7,32 @@ use App\System\AbstractController;
 
 class PetsController extends AbstractController
 {
+    private $petCollInst;
+
+    public function __construct()
+    {
+        $this->petCollInst = new PetsCollection();
+        parent::__construct();
+    }
+
     public function getAllPets()
     {
-        $pets = new PetsCollection();
-        $allPets = $pets->getAllPets();
+        $allPets = $this->petCollInst->getAllPets();
 
         return json_encode($allPets);
     }
 
     public function getById($id)
     {
-        $pets = new PetsCollection();
-        $pet = $pets->getPetById($id);
+        $pet = $this->petCollInst->getPetById($id);
 
         return json_encode($pet);
     }
 
     public function create()
     {
-        die('create');
+        $request = $_REQUEST;
+        $this->petCollInst->create($request);
     }
 
     public function update()

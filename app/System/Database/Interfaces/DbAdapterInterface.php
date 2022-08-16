@@ -9,7 +9,7 @@ interface DbAdapterInterface
 
     public function fetchAll($sql, $data);
 
-    public function insert($table, $data);
+    public function insert($table, array $data);
 
     public function update($table, $where, $data);
 

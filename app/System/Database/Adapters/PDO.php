@@ -73,30 +73,80 @@ class PDO implements DbAdapterInterface
         return $connection;
     }
 
-    /**
-     * @param $data
-     * @return false|int
-     */
-    public function insert($table, $data)
+
+
+    public function insert($table, array $data): int
     {
         if (empty($data)) {
-            return false;
+            false;
         }
 
-        $arrayKeys = array_keys($data);
-        $statement = 'INSERT INTO ' . $table . '(' . implode(", ", $arrayKeys) . ') VALUES (:'. implode(", :", $arrayKeys) .')';
-        $query = $this->connection->prepare($statement);
-
-        $this->paramsBindingHelper($data, $query);
-
-        $result = $query->execute();
-
-        if ($result) {
-            $rowCount = $query->rowCount();
-            if ($rowCount) return (int) $this->connection->lastInsertId();
+        $singleRecord = false;
+        foreach ($data as $array) {
+            if (is_array($array)) {
+                $keys = array_keys($array);
+                break;
+            } else {
+                $keys = array_keys($data);
+                $singleRecord = true;
+            }
         }
 
-        return false;
+        if (empty($keys)) {
+            throw new \Exception('There is not any values');
+        }
+
+        $insertQuery = "INSERT INTO $table (" . implode(', ', $keys) . ") VALUES";
+
+        $allKeys = [];
+        foreach ($data as $array) {
+            if (is_array($array)) {
+                $keys = array_keys($array);
+                $allKeys[] = $keys;
+            } else {
+                $keys = array_keys($data);
+                $allKeys[] = $keys;
+                break;
+            }
+        }
+
+        $allValues = [];
+        $count = 0;
+        foreach ($allKeys as $value) {
+            $vals = array_values($value);
+            if ($count === 0) {
+                $allValues[] = "(:" . $count . implode(', :' . $count, $vals) . ")";
+            } else {
+                $allValues[] = ", (:" . $count . implode(', :' . $count, $vals) . ")";
+            }
+            $count++;
+        }
+        $valuesQuery = implode($allValues);
+
+        $sth = $this->connection->prepare(
+            $insertQuery . $valuesQuery
+        );
+
+        if ($singleRecord === true) {
+            $key = array_keys($data);
+
+            for ($x = 0; $x < count($data); $x++) {
+                $sth->bindParam(':0' . $key[$x], $data[$key[$x]]);
+            }
+        } else {
+            $count = 0;
+            foreach ($data as $array) {
+                $key = array_keys($array);
+
+                for ($x = 0; $x < count($array); $x++) {
+                    $sth->bindParam(':' . $count . $key[$x], $array[$key[$x]]);
+                }
+                $count++;
+            }
+        }
+        $sth->execute();
+
+        return (int)$sth->rowCount();
     }
 
     /**

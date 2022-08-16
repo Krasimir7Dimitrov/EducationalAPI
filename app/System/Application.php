@@ -26,10 +26,9 @@ class Application
             Registry::set('dbAdapter', $dbAdapter);
 
         } catch (\Exception $e) {
+            var_dump($e->getTrace());
             throw new \Exception($e->getMessage());
         }
-
-        $this->frontController = new FrontController();
     }
 
 
