@@ -22,5 +22,15 @@ class PetsController extends AbstractController
         die('create');
     }
 
+    public function update()
+    {
+        die('update');
+    }
+
+    public function delete()
+    {
+        die('delete');
+    }
+
 
 }
