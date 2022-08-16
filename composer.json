@@ -1,0 +1,35 @@
+{
+    "name": "onelab/educational-framework",
+    "description": "Test purposes framework",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Sabev",
+            "email": "psabev@parachut.com"
+        },
+        {
+            "name": "Krasimir Dimitrov",
+            "email": "kdimitrov@parachut.com"
+        }
+    ],
+    "require": {
+        "ext-mysqli": "*",
+        "ext-readline": "*",
+        "phpmailer/phpmailer": "^6.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "scripts": {
+        "report": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php app/System/CLI/report.php"
+        ],
+        "notifications": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php app/System/CLI/notifications.php"
+        ]
+    }
+}
