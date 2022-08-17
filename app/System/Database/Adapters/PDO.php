@@ -217,14 +217,13 @@ class PDO implements DbAdapterInterface
         $whereCondition = $this->makeCondition($where);
 
         $statement = 'DELETE FROM ' . $table . ' WHERE 1'. $addAnd . implode(' AND ', $whereCondition);
-        $query = $this->db->prepare($statement);
+        $query = $this->connection->prepare($statement);
 
         foreach ($where as $key => $value) {
             $query->bindParam(':'. $key, $value);
         }
 
         $query->execute();
-
         return $query->rowCount();
     }
 

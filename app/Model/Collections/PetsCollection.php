@@ -46,4 +46,12 @@ class PetsCollection extends BaseCollection
     {
         return $this->db->update($this->table, $where, $data);
     }
+
+    public function delete($id)
+    {
+        $where = [
+            'id' => $id
+        ];
+        return $this->db->delete($this->table, $where);
+    }
 }

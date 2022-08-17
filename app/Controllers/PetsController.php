@@ -72,13 +72,14 @@ class PetsController extends AbstractController
 
     public function update($id)
     {
+        $token = $_SERVER['HTTP_AUTHORIZATION'];
+        $this->checkUnauthorized($token);
+
         $ids = $this->petCollInst->getAllId();
         $id_array = array_column($ids, 'id');
         if (!in_array($id, $id_array)) {
             $this->notFoundResponse();
         }
-        $token = $_SERVER['HTTP_AUTHORIZATION'];
-        $this->checkUnauthorized($token);
 
         $headers = getallheaders();
         if ($headers['Content-Type'] !== 'application/json') {
@@ -100,9 +101,25 @@ class PetsController extends AbstractController
         return json_encode($updatedPet, JSON_PRETTY_PRINT);
     }
 
-    public function delete()
+    public function delete($id)
     {
-        die('delete');
+        $token = $_SERVER['HTTP_AUTHORIZATION'];
+        $this->checkUnauthorized($token);
+
+        $ids = $this->petCollInst->getAllId();
+        $id_array = array_column($ids, 'id');
+        if (!in_array($id, $id_array)) {
+            $this->notFoundResponse();
+        }
+
+        $successMessage = [
+              "succsess" => "Pet with id {$id} was deleted successfully"
+        ];
+        $this->petCollInst->delete($id);
+        header("HTTP/1.1 200 OK", true, 200);
+        header("Content-Type: application/json; charset=utf-8");
+
+        return json_encode($successMessage);
     }
 
     private function notFoundResponse()
