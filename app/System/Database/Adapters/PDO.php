@@ -88,7 +88,6 @@ class PDO implements DbAdapterInterface
         $query = $this->connection->prepare($statement);
 
         $this->paramsBindingHelper($data, $query);
-
         $result = $query->execute();
 
         if ($result) {
@@ -213,7 +212,7 @@ class PDO implements DbAdapterInterface
     {
         foreach ($data as $key => $value) {
             $paramTypeForBinding = self::getParamTypeForBinding($value);
-            $query->bindParam(':' . $key, $value, $paramTypeForBinding);
+            $query->bindValue(':' . $key, $value, $paramTypeForBinding);
         }
     }
 }

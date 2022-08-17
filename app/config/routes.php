@@ -10,8 +10,8 @@ use \App\Controllers\PetsController;
 //SimpleRouter::match(['delete'],'/api/pets/{id}', [PetsController::class, 'delete']);
 
 //Simple API routes Example
-SimpleRouter::match(['get'],'/api/pets', [PetsController::class, 'getAllPets']);
-SimpleRouter::match(['get'],'/api/pet/{id}', [PetsController::class, 'getById']);
-SimpleRouter::match(['post'],'/api/pet/create', [PetsController::class, 'create']);
-SimpleRouter::match(['post'],'/api/pet/update/{id}', [PetsController::class, 'update']);
-SimpleRouter::match(['post'],'/api/pet/delete/{id}', [PetsController::class, 'delete']);
+SimpleRouter::get('/api/pets', [PetsController::class, 'getAllPets']);
+SimpleRouter::get('/api/pet/{id}', [PetsController::class, 'getById']);
+SimpleRouter::post('/api/pet/create', [PetsController::class, 'create']);
+SimpleRouter::post('/api/pet/update/{id}', [PetsController::class, 'update']);
+SimpleRouter::post('/api/pet/delete/{id}', [PetsController::class, 'delete']);
