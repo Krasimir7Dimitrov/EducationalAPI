@@ -17,6 +17,13 @@ class PetsCollection extends BaseCollection
         return $this->db->fetchAll($sql);
     }
 
+    public function getAllId()
+    {
+        $sql = "SELECT id FROM pets";
+
+        return $this->db->fetchAll($sql);
+    }
+
     public function getPetById($id): array
     {
         $sql = "SELECT * FROM pets p WHERE p.id = :id";
@@ -26,11 +33,17 @@ class PetsCollection extends BaseCollection
 
     public function create($where)
     {
-        $this->db->insert($this->table, $where);
+        return $this->db->insert($this->table, $where);
+    }
+
+    public function getLastInsert()
+    {
+        $sql = "SELECT LAST_INSERT_ID()";
+        return $this->db->fetchOne($sql);
     }
 
     public function update($where, $data)
     {
-
+        return $this->db->update($this->table, $where, $data);
     }
 }

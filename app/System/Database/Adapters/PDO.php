@@ -11,11 +11,11 @@ class PDO implements DbAdapterInterface
 
     public $connection;
 
-    const HOST          = "db";
-    const PORT          = "3306";
-    const DATABASE      = "db";
-    const USER          = "user";
-    const PASSWORD      = "password";
+    const HOST = "db";
+    const PORT = "3306";
+    const DATABASE = "db";
+    const USER = "user";
+    const PASSWORD = "password";
 
     /**
      * @throws \Exception
@@ -64,7 +64,7 @@ class PDO implements DbAdapterInterface
     private function getConnection()
     {
         try {
-            $connection = new \PDO('mysql:host='. self::HOST . ';port=' .self::PORT. ';dbname='.self::DATABASE, self::USER, self::PASSWORD);
+            $connection = new \PDO('mysql:host=' . self::HOST . ';port=' . self::PORT . ';dbname=' . self::DATABASE, self::USER, self::PASSWORD);
             $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         } catch (\Throwable $e) {
             throw new \Exception('Can\'t establish mysql connection');
@@ -72,7 +72,6 @@ class PDO implements DbAdapterInterface
 
         return $connection;
     }
-
 
 
     public function insert($table, array $data): int
@@ -144,9 +143,14 @@ class PDO implements DbAdapterInterface
                 $count++;
             }
         }
-        $sth->execute();
+        $result = $sth->execute();
 
-        return (int)$sth->rowCount();
+        if ($result) {
+            $rowCount = $sth->rowCount();
+            if ($rowCount) return (int)$this->connection->lastInsertId();
+        }
+
+        return false;
     }
 
     /**
@@ -156,38 +160,45 @@ class PDO implements DbAdapterInterface
      * @return false|int
      */
 
-    public function update($table, $where, $data)
+    public function update($table, $where, $data): int
     {
-        if (empty($data)) {
-            return false;
+        $query = "";
+        if (!empty($where) and is_array($where)) {
+            $whereVals = [];
+            foreach ($where as $key => $val) {
+                $whereVals[] = "$key = :w$key";
+                $query = implode(" AND ", $whereVals);
+            }
+        } elseif (!empty($data) and is_integer($where)) {
+            $query = "id = :id";
+        } else {
+            throw new \Exception('There is empty value or too many values');
         }
 
-        $set = $this->makeCondition($data);
-
-        $whereArray = [];
-        foreach ($where as $key => $value) {
-            $whereArray[] = "$key = :w$key";
+        $vals = [];
+        foreach ($data as $key => $val) {
+            $vals[] = "$key = :$key";
         }
 
-        $addAnd = '';
-        if (!empty($where)) {
-            $addAnd = ' AND ';
+        $sql = "UPDATE " . $table . " c SET " . implode(", ", $vals) . " WHERE 1 AND " . $query;
+        $sth = $this->connection->prepare($sql);
+
+        if (is_array($where)) {
+            foreach ($where as $key => $value) {
+                $sth->bindParam(':w' . $key, $where[$key]);
+            }
+        } else {
+            $sth->bindParam(':id', $where);
+        }
+        foreach ($data as $key => $value) {
+            $sth->bindParam(':' . $key, $data[$key]);
         }
 
-        $statement = 'UPDATE ' . $table . ' SET '. implode(', ', $set) .' WHERE 1 '. $addAnd .implode(' AND ', $whereArray);
-        $query = $this->connection->prepare($statement);
+        $sth->execute();
 
-        $this->paramsBindingHelper($data, $query);
-
-        foreach ($where as $key => $value) {
-            $paramTypeForBinding = self::getParamTypeForBinding($value);
-            $query->bindParam(':w'. $key, $value, $paramTypeForBinding);
-        }
-
-        $query->execute();
-
-        return $query->rowCount();
+        return (int)$sth->rowCount();
     }
+
 
     /**
      * @param $table
