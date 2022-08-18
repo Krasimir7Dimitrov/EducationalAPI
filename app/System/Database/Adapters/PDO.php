@@ -104,7 +104,6 @@ class PDO implements DbAdapterInterface
      * @param $data
      * @return false|int
      */
-
     public function update($table, $where, $data)
     {
         if (empty($data)) {
@@ -141,9 +140,9 @@ class PDO implements DbAdapterInterface
     /**
      * @param $table
      * @param $where
-     * @return false
+     * @return false|int
      */
-    public function delete($table, $where): bool
+    public function delete($table, $where)
     {
         $addAnd = '';
         if (empty($where)) {
@@ -155,7 +154,7 @@ class PDO implements DbAdapterInterface
         $whereCondition = $this->makeCondition($where);
 
         $statement = 'DELETE FROM ' . $table . ' WHERE 1'. $addAnd . implode(' AND ', $whereCondition);
-        $query = $this->db->prepare($statement);
+        $query = $this->connection->prepare($statement);
 
         foreach ($where as $key => $value) {
             $query->bindParam(':'. $key, $value);

@@ -8,14 +8,14 @@ class PetsCollection extends BaseCollection
 {
     protected $table = 'pets';
 
-    public function getAllPets(): array
+    public function getAllPets()
     {
         $sql = "SELECT * FROM $this->table";
 
         return $this->db->fetchAll($sql);
     }
 
-    public function getPetById($id): array
+    public function getPetById($id)
     {
         $sql = "SELECT * FROM $this->table p WHERE p.id = :id";
 

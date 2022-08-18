@@ -4,8 +4,6 @@ namespace App\Controllers;
 
 use App\Model\Collections\PetsCollection;
 use App\System\AbstractController;
-use Pecee\Http\Request;
-use Pecee\SimpleRouter\Router;
 use Pecee\SimpleRouter\SimpleRouter;
 
 class PetsController extends AbstractController
@@ -14,106 +12,190 @@ class PetsController extends AbstractController
 
     public function getAllPets()
     {
-        $pets = new PetsCollection();
-        $allPets = $pets->getAllPets();
-
-        $obj = [];
+        $pets        = new PetsCollection();
+        $allPets     = $pets->getAllPets();
         $obj['pets'] = $allPets;
 
-        header('HTTP/1.1 200 OK', true, 200);
-        return json_encode($obj, JSON_PRETTY_PRINT);
+        SimpleRouter::response()->httpCode('200')->json($obj);
+        exit();
     }
 
     public function getById($id)
     {
+        $id   = (int) $id;
         $pets = new PetsCollection();
-        $pet = $pets->getPetById($id);
+        $pet  = $pets->getPetById($id);
 
-        $result = [];
-        $result['pet'] = $pet;
+        if ($pet) {
+            $result['pet'] = $pet;
+            SimpleRouter::response()->httpCode('200')->json($result);
+            exit();
+        }
 
-        header('HTTP/1.1 200 OK', true, 200);
-        return json_encode($result, JSON_PRETTY_PRINT);
+        SimpleRouter::response()->httpCode('404');
+        exit();
     }
 
     public function create()
     {
-        $authToken = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+        $requestContentType = $this->getContentType();
 
-        if ($this->verifyToken($authToken)) {
-            $pets = new PetsCollection();
-            $requestBody = $this->getRequestBody();
-
-            if (array_key_exists('name', $requestBody) && !is_string($requestBody['name'])) {
-                header('HTTP/1.1 422 Unprocessable Entity ');
-                exit();
-            }
-            $pet = $pets->create($requestBody);
-
-            $result = [];
-            $result['inserted'] = $pets->getPetById($pet);
-
-            if (is_int($pet)) {
-                header('HTTP/1.1 201 Created', true, 201);
-                return json_encode($result, JSON_PRETTY_PRINT);
-            }
-
-            header('HTTP/1.1 500 Internal Server Error');
+        if ($requestContentType !== 'application/json') {
+            SimpleRouter::response()->httpCode('400');
             exit();
         }
 
-        header('HTTP/1.1 401 Unauthorized', true, 401);
+        $authToken = SimpleRouter::request()->getHeader('http_authorization');
+
+        if (!$this->verifyToken($authToken)) {
+            SimpleRouter::response()->httpCode('401');
+            exit();
+        }
+
+        $pets        = new PetsCollection();
+        $requestBody = $this->getRequestBody();
+
+        $errors = [];
+        if (array_key_exists('name', $requestBody) && !is_string($requestBody['name'])) {
+            $bodyType              = gettype($requestBody['name']);
+            $errors['errors']['message']     = 'Validation Error';
+            $errors['errors']['description'] = 'Field \'name\' should be of type string, '. $bodyType . ' provided';
+            SimpleRouter::response()->httpCode('422')->json($errors);
+            exit();
+        }
+
+        if (is_string($requestBody['name']) && strlen($requestBody['name']) > 255) {
+            $errors['errors']['message']     = 'Validation Error';
+            $errors['errors']['description'] = 'Field \'name\' should be up to 255 characters.';
+            SimpleRouter::response()->httpCode('422')->json($errors);
+            exit();
+        }
+
+        if (array_key_exists('type', $requestBody) && !is_string($requestBody['type'])) {
+            $bodyType              = gettype($requestBody['type']);
+            $errors['errors']['message']     = 'Validation Error';
+            $errors['errors']['description'] = 'Field \'type\' should be of type string, '. $bodyType . ' provided';
+            SimpleRouter::response()->httpCode('422')->json($errors);
+            exit();
+        }
+
+        if (is_string($requestBody['type']) && strlen($requestBody['type']) > 255) {
+            $errors['errors']['message']     = 'Validation Error';
+            $errors['errors']['description'] = 'Field \'type\' should be up to 255 characters.';
+            SimpleRouter::response()->httpCode('422')->json($errors);
+            exit();
+        }
+
+        $petId = $pets->create($requestBody);
+
+        if (is_int($petId)) {
+            $result['inserted'] = $pets->getPetById($petId);
+            SimpleRouter::response()->httpCode('201')->json($result);
+        }
+
+        SimpleRouter::response()->httpCode('500');
         exit();
     }
 
     public function update($id)
     {
-        $authToken = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+        $requestContentType = $this->getContentType();
 
-        if ($this->verifyToken($authToken)) {
-            $pets = new PetsCollection();
-
-            $requestBody = $this->getRequestBody();
-
-            $result = [];
-
-            if ($requestBody['name'] == null || $requestBody['type'] == null) {
-                header("HTTP/1.1 422 Validation Error", true, 422);
-                $result['result'] = "HTTP/1.1 422 Validation Error";
-                return json_encode($result);
-            }
-
-            $data = $where = [];
-            $data['name'] = $requestBody['name'];
-            $data['type'] = $requestBody['type'];
-
-            $where['id'] = $id;
-
-//            if (array_key_exists('name', $requestBody) && !is_string($requestBody['name']) || array_key_exists('type', $requestBody) && !is_string($requestBody['type'])) {
-//                header('HTTP/1.1 422 Unprocessable Entity ');
-//                exit();
-//            }
-
-            $pet = $pets->update($where, $data);
-            $updatedResult = $pets->getPetById($id);
-
-            if (is_int($pet)) {
-                header('HTTP/1.1 200 Successfully updated', true, 200);
-                header("Content-Type: application/json");
-                return json_encode($updatedResult, JSON_PRETTY_PRINT);
-            }
-
-            header('HTTP/1.1 500 Internal Server Error');
+        if ($requestContentType !== 'application/json') {
+            SimpleRouter::response()->httpCode('400');
             exit();
         }
 
-        header('HTTP/1.1 401 Unauthorized', true, 401);
+        $authToken = SimpleRouter::request()->getHeader('http_authorization');
+
+        if (!$this->verifyToken($authToken)) {
+            SimpleRouter::response()->httpCode('401');
+            exit();
+        }
+
+        $pets = new PetsCollection();
+
+        if (!$pets->getPetById($id)) {
+            SimpleRouter::response()->httpCode('404');
+            exit();
+        }
+
+        $requestBody = $this->getRequestBody();
+
+        $errors = [];
+        if (array_key_exists('name', $requestBody) && !is_string($requestBody['name'])) {
+            $bodyType              = gettype($requestBody['name']);
+            $errors['errors']['message']     = 'Validation Error';
+            $errors['errors']['description'] = 'Field \'name\' should be of type string, '. $bodyType . ' provided';
+            SimpleRouter::response()->httpCode('422')->json($errors);
+            exit();
+        }
+
+        if (is_string($requestBody['name']) && strlen($requestBody['name']) > 255) {
+            $errors['errors']['message']     = 'Validation Error';
+            $errors['errors']['description'] = 'Field \'name\' should be up to 255 characters.';
+            SimpleRouter::response()->httpCode('422')->json($errors);
+            exit();
+        }
+
+        if (array_key_exists('type', $requestBody) && !is_string($requestBody['type'])) {
+            $bodyType              = gettype($requestBody['type']);
+            $errors['errors']['message']     = 'Validation Error';
+            $errors['errors']['description'] = 'Field \'type\' should be of type string, '. $bodyType . ' provided';
+            SimpleRouter::response()->httpCode('422')->json($errors);
+            exit();
+        }
+
+        if (is_string($requestBody['type']) && strlen($requestBody['type']) > 255) {
+            $errors['errors']['message']     = 'Validation Error';
+            $errors['errors']['description'] = 'Field \'type\' should be up to 255 characters.';
+            SimpleRouter::response()->httpCode('422')->json($errors);
+            exit();
+        }
+
+        $data['name'] = $requestBody['name'];
+        $data['type'] = $requestBody['type'];
+        $where['id']  = $id;
+
+        $pet = $pets->update($where, $data);
+
+        if (is_int($pet)) {
+            SimpleRouter::response()->httpCode('200')->json($pets->getPetById($id));
+            exit();
+        }
+
+        SimpleRouter::response()->httpCode('500');
         exit();
     }
 
-    public function delete()
+    /**
+     * @param $id
+     * @return void
+     */
+    public function delete($id) :void
     {
-        die('delete');
+        $authToken = SimpleRouter::request()->getHeader('http_authorization');
+
+        if (!$this->verifyToken($authToken)) {
+            SimpleRouter::response()->httpCode('401');
+            exit();
+        }
+
+        $pets = new PetsCollection();
+        $where['id'] = $id;
+
+        if (!$pets->getPetById($id)) {
+            SimpleRouter::response()->httpCode('404');
+            exit();
+        }
+
+        if (is_int($pets->delete($where))) {
+            SimpleRouter::response()->httpCode('204');
+            exit();
+        }
+
+        SimpleRouter::response()->httpCode('500');
+        exit();
     }
 
     public function getToken()
@@ -132,6 +214,11 @@ class PetsController extends AbstractController
     public function getRequestBody()
     {
         return SimpleRouter::request()->getInputHandler()->all();
+    }
+
+    public function getContentType()
+    {
+        return SimpleRouter::request()->getContentType();
     }
 
 }
