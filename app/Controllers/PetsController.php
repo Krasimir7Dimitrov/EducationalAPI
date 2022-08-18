@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Model\Collections\PetsCollection;
 use App\System\AbstractController;
+use Pecee\Http\Input\InputFile;
 use Pecee\SimpleRouter\SimpleRouter;
 
 class PetsController extends AbstractController
@@ -16,7 +17,6 @@ class PetsController extends AbstractController
     {
         $this->petCollInst = new PetsCollection();
         parent::__construct();
-        $this->getToken();
     }
 
     public function getAllPets()
@@ -32,13 +32,18 @@ class PetsController extends AbstractController
 
     public function getById($id)
     {
-        $ids = $this->petCollInst->getAllId();
-        $id_array = array_column($ids, 'id');
-        if (!in_array($id, $id_array)) {
+        $id = (int)$id;
+
+        $pet = [];
+        try {
+            $pet = $this->petCollInst->getPetById($id);
+            if (empty($pet)) {
+                $this->notFoundResponse();
+            }
+        } catch (\Throwable $e) {
             $this->notFoundResponse();
         }
 
-        $pet = $this->petCollInst->getPetById($id);
         header("HTTP/1.1 200 OK", true, 200);
         header("Content-Type: application/json; charset=utf-8");
         return json_encode($pet);
@@ -49,25 +54,31 @@ class PetsController extends AbstractController
         $token = $_SERVER['HTTP_AUTHORIZATION'];
         $this->checkUnauthorized($token);
 
-        $headers = getallheaders();
-        if ($headers['Content-Type'] !== 'application/json') {
-            $this->notFoundResponse();
+        if (SimpleRouter::request()->getContentType() !== 'application/json') {
+            SimpleRouter::response()->httpCode(400); exit(0);
         }
         $request = SimpleRouter::request();
         $requestBody = $request->getInputHandler()->all();
 
+        //Да направя проверките поотделно и да пълнят ерор арея
         if (array_key_exists('name', $requestBody) === false || array_key_exists('type', $requestBody) === false) {
-            header("HTTP/1.1 422 Validation error", true, 422);
+            $errors = [
+                [
+                    "title" => ""
+                ]
+            ];
+            SimpleRouter::response()->httpCode(422)->json($errors);
+            exit(0);
         }
 
         $result = $this->petCollInst->create($requestBody);
-        if (!is_int($result)) {
-            $this->notFoundResponse();
+        if (!empty($result)) {
+            SimpleRouter::response()->httpCode(500); exit(0);
         }
         $newPet = $this->petCollInst->getPetById($result);
         header("HTTP/1.1 201 Created", true, 201);
         header("Content-Type: application/json; charset=utf-8");
-        return json_encode($newPet, JSON_PRETTY_PRINT);
+        return json_encode($newPet);
     }
 
     public function update($id)
@@ -75,9 +86,15 @@ class PetsController extends AbstractController
         $token = $_SERVER['HTTP_AUTHORIZATION'];
         $this->checkUnauthorized($token);
 
-        $ids = $this->petCollInst->getAllId();
-        $id_array = array_column($ids, 'id');
-        if (!in_array($id, $id_array)) {
+        $id = (int)$id;
+
+        if ($id === 0) {
+            $this->notFoundResponse();
+        }
+        $pet = [];
+        try {
+            $pet = $this->petCollInst->getPetById($id);
+        } catch (\Throwable $e) {
             $this->notFoundResponse();
         }
 
@@ -94,11 +111,12 @@ class PetsController extends AbstractController
         $where = [
             'id' => $id
         ];
+        //Да добавя проверка за това, дали има променен ред
         $this->petCollInst->update($where, $requestBody);
         $updatedPet = $this->petCollInst->getPetById($id);
         header("HTTP/1.1 200 OK", true, 200);
         header("Content-Type: application/json; charset=utf-8");
-        return json_encode($updatedPet, JSON_PRETTY_PRINT);
+        return json_encode($updatedPet);
     }
 
     public function delete($id)
@@ -116,10 +134,10 @@ class PetsController extends AbstractController
               "succsess" => "Pet with id {$id} was deleted successfully"
         ];
         $this->petCollInst->delete($id);
-        header("HTTP/1.1 200 OK", true, 200);
+        header("HTTP/1.1 204", true, 204);
         header("Content-Type: application/json; charset=utf-8");
 
-        return json_encode($successMessage);
+        //return json_encode($successMessage);
     }
 
     private function notFoundResponse()

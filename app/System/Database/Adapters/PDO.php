@@ -199,13 +199,12 @@ class PDO implements DbAdapterInterface
         return (int)$sth->rowCount();
     }
 
-
     /**
      * @param $table
      * @param $where
-     * @return false
+     * @return int
      */
-    public function delete($table, $where): bool
+    public function delete($table, $where): int
     {
         $addAnd = '';
         if (empty($where)) {
@@ -224,7 +223,7 @@ class PDO implements DbAdapterInterface
         }
 
         $query->execute();
-        return $query->rowCount();
+        return (int)$query->rowCount();
     }
 
     /**
@@ -273,7 +272,7 @@ class PDO implements DbAdapterInterface
     {
         foreach ($data as $key => $value) {
             $paramTypeForBinding = self::getParamTypeForBinding($value);
-            $query->bindParam(':' . $key, $value, $paramTypeForBinding);
+            $query->bindValue(':' . $key, $value, $paramTypeForBinding);
         }
     }
 }

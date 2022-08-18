@@ -24,7 +24,7 @@ class PetsCollection extends BaseCollection
         return $this->db->fetchAll($sql);
     }
 
-    public function getPetById($id): array
+    public function getPetById($id)
     {
         $sql = "SELECT * FROM pets p WHERE p.id = :id";
 
