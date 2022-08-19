@@ -11,10 +11,12 @@ class PetsController extends AbstractController
 {
     private $petCollInst;
     private $token = 'Pancho shte se jeni';
+    private $request;
 
 
     public function __construct()
     {
+        $this->request = SimpleRouter::request();
         $this->petCollInst = new PetsCollection();
         parent::__construct();
     }
@@ -60,19 +62,32 @@ class PetsController extends AbstractController
         $request = SimpleRouter::request();
         $requestBody = $request->getInputHandler()->all();
 
-        //Да направя проверките поотделно и да пълнят ерор арея
-        if (array_key_exists('name', $requestBody) === false || array_key_exists('type', $requestBody) === false) {
-            $errors = [
-                [
-                    "title" => ""
-                ]
-            ];
+        $errors = [];
+        if (array_key_exists('name', $requestBody) === false) {
+            $errors[]['error'] = "'name' parameter is require";
+        }
+        elseif (strlen($requestBody['name']) < 4) {
+            $errors[]['error'] = "'name' value needs to be more than 3 characters";
+        }
+        elseif (strlen($requestBody['name']) > 20) {
+            $errors[]['error'] = "'name' value needs to be less than 20 characters";
+        }
+        if (array_key_exists('type', $requestBody) === false) {
+            $errors[]['error'] = "'type' parameter is require";
+        }
+        elseif (strlen($requestBody['type']) < 3) {
+            $errors[]['error'] = "'type' value needs to be more than 3 characters";
+        }
+        elseif (strlen($requestBody['type']) > 20) {
+            $errors[]['error'] = "'type' value needs to be less than 20 characters";
+        }
+        if (!empty($errors)) {
             SimpleRouter::response()->httpCode(422)->json($errors);
             exit(0);
         }
 
         $result = $this->petCollInst->create($requestBody);
-        if (!empty($result)) {
+        if (empty($result)) {
             SimpleRouter::response()->httpCode(500); exit(0);
         }
         $newPet = $this->petCollInst->getPetById($result);
@@ -88,12 +103,12 @@ class PetsController extends AbstractController
 
         $id = (int)$id;
 
-        if ($id === 0) {
-            $this->notFoundResponse();
-        }
         $pet = [];
         try {
             $pet = $this->petCollInst->getPetById($id);
+            if (empty($pet)) {
+                $this->notFoundResponse();
+            }
         } catch (\Throwable $e) {
             $this->notFoundResponse();
         }
@@ -102,17 +117,41 @@ class PetsController extends AbstractController
         if ($headers['Content-Type'] !== 'application/json') {
             $this->notFoundResponse();
         }
-        $request = SimpleRouter::request();
-        $requestBody = $request->getInputHandler()->all();
-        if (array_key_exists('name', $requestBody) === false || array_key_exists('type', $requestBody) === false) {
-            header("HTTP/1.1 422 Validation error", true, 422);
-            die();
+
+        $requestBody = $this->request->getInputHandler()->all();
+        $errors = [];
+        if (array_key_exists('name', $requestBody) === false) {
+            $errors[]['error'] = "'name' parameter is require";
+        }
+        elseif (strlen($requestBody['name']) < 4) {
+            $errors[]['error'] = "'name' value needs to be more than 3 characters";
+        }
+        elseif (strlen($requestBody['name']) > 20) {
+            $errors[]['error'] = "'name' value needs to be less than 20 characters";
+        }
+        if (array_key_exists('type', $requestBody) === false) {
+            $errors[]['error'] = "'type' parameter is require";
+        }
+        elseif (strlen($requestBody['type']) < 3) {
+            $errors[]['error'] = "'type' value needs to be more than 3 characters";
+        }
+        elseif (strlen($requestBody['type']) > 20) {
+            $errors[]['error'] = "'type' value needs to be less than 20 characters";
+        }
+        if (!empty($errors)) {
+            SimpleRouter::response()->httpCode(422)->json($errors);
+            exit(0);
         }
         $where = [
             'id' => $id
         ];
-        //Да добавя проверка за това, дали има променен ред
-        $this->petCollInst->update($where, $requestBody);
+        $result = $this->petCollInst->update($where, $requestBody);
+        if ($result == 0) {
+            $error = [
+                "error" => "Pet with id {$id} has not updated, maybe the data is the same"
+            ];
+            SimpleRouter::response()->httpCode(400)->json($error); exit(0);
+        }
         $updatedPet = $this->petCollInst->getPetById($id);
         header("HTTP/1.1 200 OK", true, 200);
         header("Content-Type: application/json; charset=utf-8");
@@ -121,6 +160,18 @@ class PetsController extends AbstractController
 
     public function delete($id)
     {
+        $id = (int)$id;
+
+        $pet = [];
+        try {
+            $pet = $this->petCollInst->getPetById($id);
+            if (empty($pet)) {
+                $this->notFoundResponse();
+            }
+        } catch (\Throwable $e) {
+            $this->notFoundResponse();
+        }
+
         $token = $_SERVER['HTTP_AUTHORIZATION'];
         $this->checkUnauthorized($token);
 
